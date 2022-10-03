@@ -8,7 +8,7 @@ import 'package:path/path.dart' as path;
 import 'generated/bindings.g.dart';
 
 final ffi.DynamicLibrary _lib = _loadLameLibrary();
-final LAME _l = LAME(_lib);
+final LameBindings _bindings = LameBindings(_lib);
 
 ffi.DynamicLibrary _loadLameLibrary() {
   var libraryPath = path.join(Directory.current.path, 'liblame.so');
@@ -22,23 +22,23 @@ ffi.DynamicLibrary _loadLameLibrary() {
 }
 
 String getLameVersion() {
-  return _l.get_lame_version().cast<Utf8>().toDartString();
+  return _bindings.get_lame_version().cast<Utf8>().toDartString();
 }
 
 class LameMp3Encoder {
-  final ffi.Pointer<lame_global_struct> _flags = _l.lame_init();
+  final ffi.Pointer<lame_global_struct> _flags = _bindings.lame_init();
 
   LameMp3Encoder(
       {int numChannels = 2, int sampleRate = 44100, int bitRate = 128}) {
-    _l.lame_set_num_channels(_flags, numChannels);
-    _l.lame_set_in_samplerate(_flags, sampleRate);
-    _l.lame_set_brate(_flags, bitRate);
+    _bindings.lame_set_num_channels(_flags, numChannels);
+    _bindings.lame_set_in_samplerate(_flags, sampleRate);
+    _bindings.lame_set_brate(_flags, bitRate);
 
     if (numChannels == 1) {
-      _l.lame_set_mode(_flags, 3); // 3: mono mode
+      _bindings.lame_set_mode(_flags, 3); // 3: mono mode
     }
 
-    int retCode = _l.lame_init_params(_flags);
+    int retCode = _bindings.lame_init_params(_flags);
     if (retCode < 0) {
       throw LameMp3EncoderException(retCode,
           errorMessage:
@@ -59,7 +59,7 @@ class LameMp3Encoder {
     int mp3BufSize = (1.25 * leftChannel.length + 7500).ceil();
     ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
 
-    int encodedSize = _l.lame_encode_buffer(
+    int encodedSize = _bindings.lame_encode_buffer(
         _flags,
         ptrLeft,
         ptrRight ?? ffi.Pointer<ffi.Short>.fromAddress(0),
@@ -94,7 +94,7 @@ class LameMp3Encoder {
     int mp3BufSize = (1.25 * leftChannel.length + 7500).ceil();
     ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
 
-    int encodedSize = _l.lame_encode_buffer_ieee_double(
+    int encodedSize = _bindings.lame_encode_buffer_ieee_double(
         _flags,
         ptrLeft,
         ptrRight ?? ffi.Pointer<ffi.Double>.fromAddress(0),
@@ -120,7 +120,7 @@ class LameMp3Encoder {
     final int mp3BufSize = 7200;
     ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
 
-    int encodedSize = _l.lame_encode_flush(_flags, ptrMp3, mp3BufSize);
+    int encodedSize = _bindings.lame_encode_flush(_flags, ptrMp3, mp3BufSize);
 
     final ret = Uint8List(encodedSize);
     for (int i = 0; i < encodedSize; i++) {
@@ -132,7 +132,7 @@ class LameMp3Encoder {
   }
 
   void close() {
-    _l.lame_close(_flags);
+    _bindings.lame_close(_flags);
   }
 }
 

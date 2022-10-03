@@ -4,16 +4,17 @@
 import 'dart:ffi' as ffi;
 
 /// Bindings to LAME
-class LAME {
+class LameBindings {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
       _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  LAME(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
+  LameBindings(ffi.DynamicLibrary dynamicLibrary)
+      : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  LAME.fromLookup(
+  LameBindings.fromLookup(
       ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
           lookup)
       : _lookup = lookup;
