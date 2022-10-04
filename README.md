@@ -27,10 +27,17 @@ it under your program's working directory.
 
 Alternatively, you can manually load `libmp3lame`:
 ```dart
-import 'package:dart_lame/lame_loader.dart' as loader;
 import 'dart:ffi' as ffi;
+import 'package:dart_lame/dart_lame.dart' as lame;
 
-loader.library = ffi.DynamicLibrary.open('path_to_libmp3lame');
+class CustomLoader extends lame.LameLibraryLoader {
+  @override
+  ffi.DynamicLibrary load() {
+    return ffi.DynamicLibrary.open("path_to_libmp3lame");
+  }
+}
+
+lame.lameLoader = CustomLoader(); 
 ```
 
 **For Flutter user, please use [flutter_lame](https://github.com/BestOwl/flutter_lame) instead.**

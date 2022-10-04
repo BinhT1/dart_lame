@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'ffi/lame_library.dart';
+import 'ffi/lame_loader.dart';
 import 'ffi/list_extensions.dart';
 import 'dart_lame_base.dart';
 import 'generated/bindings.g.dart';
@@ -49,6 +50,8 @@ class EncoderWorker {
       });
 
     await Isolate.spawn((EncoderWorkerOptions options) {
+      lameLoader = options.lameLoader;
+
       final ffi.Pointer<lame_global_struct> flags = bindings.lame_init();
       bindings.lame_set_num_channels(flags, options.numChannels);
       bindings.lame_set_in_samplerate(flags, options.sampleRate);
@@ -179,7 +182,8 @@ class EncoderWorker {
             numChannels: numChannels,
             sampleRate: sampleRate,
             bitRate: bitRate,
-            sendPort: receivePort.sendPort));
+            sendPort: receivePort.sendPort,
+            lameLoader: lameLoader));
 
     return EncoderWorker._(
         receivePort: receivePort,
@@ -203,12 +207,14 @@ class EncoderWorkerOptions {
   final int sampleRate;
   final int bitRate;
   final SendPort sendPort;
+  final LameLibraryLoader lameLoader;
 
   EncoderWorkerOptions(
       {required this.numChannels,
       required this.sampleRate,
       required this.bitRate,
-      required this.sendPort});
+      required this.sendPort,
+      required this.lameLoader});
 }
 
 class BaseEncoderRequest {
