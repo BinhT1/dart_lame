@@ -11,29 +11,42 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages). 
 -->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+Dart native bindings to LAME (MP3 encoder)
 
 ## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Encode WAV (PCM-16 or PCM IEEE Double) to MP3
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+To use this library, you must have `libmp3lame` installed on your system.
+Please make sure the following libraries is available on your system or place 
+them under your program's working directory.
+- Windows: `mp3lame.dll`
+- Linux: `libmp3lame.so`
+- macOS: `libmp3lame.dylib`
 
+**For Flutter user, please use [flutter_lame](https://github.com/BestOwl/flutter_lame) instead.**
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
 ```dart
-const like = 'sample';
+final File f = File("output.mp3");
+final IOSink sink = f.openWrite();
+final LameMp3Encoder encoder = LameMp3Encoder(sampleRate: 44100, numChannels: 2);
+
+
+Float64List leftChannelSamples;
+Float64List rightChannelSamples;
+// Get samples from file or from microphone.
+
+final mp3Frame = await encoder.encode(
+  leftChannel: leftChannelSamples,
+  rightChannel: rightChannelSamples);
+sink.add(mp3Frame);
+// continue until all samples have been encoded
+
+// finally, flush encoder buffer
+final lastMp3Frame = await encoder.flush();
+sink.add(lastMp3Frame);
 ```
 
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+For a complete example, please go to `/example` folder.
