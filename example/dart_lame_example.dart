@@ -40,10 +40,13 @@ void main(List<String> arguments) async {
           rightChannel: right?.sublist(i, i + wav.samplesPerSecond));
       sink.add(mp3Frame);
     }
+    sink.add(await encoder.flush());
   } finally {
     sink.close();
     encoder.close();
   }
 
   print("Successfully encoded mp3 file: ${f.absolute}");
+
+
 }

@@ -11,10 +11,14 @@ import 'dart_lame_base.dart';
 import 'generated/bindings.g.dart';
 
 class EncoderWorker {
+  final ReceivePort receivePort;
   final SendPort sendPort;
   final Function(EncodeResponse) responseCallback;
 
-  EncoderWorker._(this.sendPort, this.responseCallback);
+  EncoderWorker._(
+      {required this.receivePort,
+      required this.sendPort,
+      required this.responseCallback});
 
   static Future<EncoderWorker> create(
       {required int numChannels,
@@ -61,111 +65,112 @@ class EncoderWorker {
                 "Unable to create encoder, probably because of invalid parameters");
       }
 
-      final ReceivePort workerReceivePort = ReceivePort()
-        ..listen((dynamic data) {
-          // On the worker isolate listen to requests and respond to them.
-          if (data is EncodeRequest) {
-            final ffi.Pointer<ffi.Short> ptrLeft =
-                data.leftChannel.copyToNativeMemory().cast<ffi.Short>();
-            ffi.Pointer<ffi.Short>? ptrRight;
-            if (data.rightChannel != null) {
-              ptrRight =
-                  data.rightChannel!.copyToNativeMemory().cast<ffi.Short>();
-            }
-
-            int mp3BufSize = (1.25 * data.leftChannel.length + 7500).ceil();
-            ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
-
-            int encodedSize = bindings.lame_encode_buffer(
-                flags,
-                ptrLeft,
-                ptrRight ?? ffi.Pointer<ffi.Short>.fromAddress(0),
-                data.leftChannel.length,
-                ptrMp3,
-                mp3BufSize);
-
-            final result = Uint8List(encodedSize);
-            for (int i = 0; i < encodedSize; i++) {
-              result[i] = ptrMp3.elementAt(i).value;
-            }
-
-            calloc.free(ptrMp3);
-            calloc.free(ptrLeft);
-            if (ptrRight != null) {
-              calloc.free(ptrRight);
-            }
-
-            final EncodeResponse response =
-                EncodeResponse(id: data.id, result: result);
-            options.sendPort.send(response);
-            return;
+      final ReceivePort workerReceivePort = ReceivePort();
+      workerReceivePort.listen((dynamic data) {
+        // On the worker isolate listen to requests and respond to them.
+        if (data is EncodeRequest) {
+          final ffi.Pointer<ffi.Short> ptrLeft =
+              data.leftChannel.copyToNativeMemory().cast<ffi.Short>();
+          ffi.Pointer<ffi.Short>? ptrRight;
+          if (data.rightChannel != null) {
+            ptrRight =
+                data.rightChannel!.copyToNativeMemory().cast<ffi.Short>();
           }
 
-          if (data is EncodeFloat64Request) {
-            final ffi.Pointer<ffi.Double> ptrLeft =
-                data.leftChannel.copyToNativeMemory().cast<ffi.Double>();
-            ffi.Pointer<ffi.Double>? ptrRight;
-            if (data.rightChannel != null) {
-              ptrRight =
-                  data.rightChannel!.copyToNativeMemory().cast<ffi.Double>();
-            }
+          int mp3BufSize = (1.25 * data.leftChannel.length + 7500).ceil();
+          ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
 
-            // See LAME API doc
-            int mp3BufSize = (1.25 * data.leftChannel.length + 7500).ceil();
-            ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
+          int encodedSize = bindings.lame_encode_buffer(
+              flags,
+              ptrLeft,
+              ptrRight ?? ffi.Pointer<ffi.Short>.fromAddress(0),
+              data.leftChannel.length,
+              ptrMp3,
+              mp3BufSize);
 
-            int encodedSize = bindings.lame_encode_buffer_ieee_double(
-                flags,
-                ptrLeft,
-                ptrRight ?? ffi.Pointer<ffi.Double>.fromAddress(0),
-                data.leftChannel.length,
-                ptrMp3,
-                mp3BufSize);
-
-            final result = Uint8List(encodedSize);
-            for (int i = 0; i < encodedSize; i++) {
-              result[i] = ptrMp3.elementAt(i).value;
-            }
-
-            calloc.free(ptrMp3);
-            calloc.free(ptrLeft);
-            if (ptrRight != null) {
-              calloc.free(ptrRight);
-            }
-
-            final EncodeResponse response =
-                EncodeResponse(id: data.id, result: result);
-            options.sendPort.send(response);
-            return;
+          final result = Uint8List(encodedSize);
+          for (int i = 0; i < encodedSize; i++) {
+            result[i] = ptrMp3.elementAt(i).value;
           }
 
-          if (data is FlushRequest) {
-            final int mp3BufSize = 7200; // See LAME API doc
-            ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
-
-            int encodedSize =
-                bindings.lame_encode_flush(flags, ptrMp3, mp3BufSize);
-
-            final result = Uint8List(encodedSize);
-            for (int i = 0; i < encodedSize; i++) {
-              result[i] = ptrMp3.elementAt(i).value;
-            }
-            calloc.free(ptrMp3);
-
-            final EncodeResponse response =
-                EncodeResponse(id: data.id, result: result);
-            options.sendPort.send(response);
-            return;
+          calloc.free(ptrMp3);
+          calloc.free(ptrLeft);
+          if (ptrRight != null) {
+            calloc.free(ptrRight);
           }
 
-          if (data is CloseRequest) {
-            bindings.lame_close(flags);
-            Isolate.exit();
+          final EncodeResponse response =
+              EncodeResponse(id: data.id, result: result);
+          options.sendPort.send(response);
+          return;
+        }
+
+        if (data is EncodeFloat64Request) {
+          final ffi.Pointer<ffi.Double> ptrLeft =
+              data.leftChannel.copyToNativeMemory().cast<ffi.Double>();
+          ffi.Pointer<ffi.Double>? ptrRight;
+          if (data.rightChannel != null) {
+            ptrRight =
+                data.rightChannel!.copyToNativeMemory().cast<ffi.Double>();
           }
 
-          throw UnsupportedError(
-              'Unsupported message type: ${data.runtimeType}');
-        });
+          // See LAME API doc
+          int mp3BufSize = (1.25 * data.leftChannel.length + 7500).ceil();
+          ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
+
+          int encodedSize = bindings.lame_encode_buffer_ieee_double(
+              flags,
+              ptrLeft,
+              ptrRight ?? ffi.Pointer<ffi.Double>.fromAddress(0),
+              data.leftChannel.length,
+              ptrMp3,
+              mp3BufSize);
+
+          final result = Uint8List(encodedSize);
+          for (int i = 0; i < encodedSize; i++) {
+            result[i] = ptrMp3.elementAt(i).value;
+          }
+
+          calloc.free(ptrMp3);
+          calloc.free(ptrLeft);
+          if (ptrRight != null) {
+            calloc.free(ptrRight);
+          }
+
+          final EncodeResponse response =
+              EncodeResponse(id: data.id, result: result);
+          options.sendPort.send(response);
+          return;
+        }
+
+        if (data is FlushRequest) {
+          final int mp3BufSize = 7200; // See LAME API doc
+          ffi.Pointer<ffi.UnsignedChar> ptrMp3 = calloc(mp3BufSize);
+
+          int encodedSize =
+              bindings.lame_encode_flush(flags, ptrMp3, mp3BufSize);
+
+          final result = Uint8List(encodedSize);
+          for (int i = 0; i < encodedSize; i++) {
+            result[i] = ptrMp3.elementAt(i).value;
+          }
+          calloc.free(ptrMp3);
+
+          final EncodeResponse response =
+              EncodeResponse(id: data.id, result: result);
+          options.sendPort.send(response);
+          return;
+        }
+
+        if (data is _CloseRequest) {
+          bindings.lame_close(flags);
+
+          workerReceivePort.close();
+          Isolate.exit();
+        }
+
+        throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
+      });
 
       // Send the the port to the main isolate on which we can receive requests.
       options.sendPort.send(workerReceivePort.sendPort);
@@ -176,11 +181,20 @@ class EncoderWorker {
             bitRate: bitRate,
             sendPort: receivePort.sendPort));
 
-    return EncoderWorker._(await completer.future, responseCallback);
+    return EncoderWorker._(
+        receivePort: receivePort,
+        sendPort: await completer.future,
+        responseCallback: responseCallback);
   }
 
   void sendRequest(BaseEncoderRequest? request) {
     sendPort.send(request);
+  }
+
+  void close() {
+    final _CloseRequest request = _CloseRequest();
+    sendPort.send(request);
+    receivePort.close();
   }
 }
 
@@ -224,9 +238,7 @@ class FlushRequest extends BaseEncoderRequest {
   const FlushRequest(int id) : super(id);
 }
 
-class CloseRequest extends BaseEncoderRequest {
-  const CloseRequest(int id) : super(id);
-}
+class _CloseRequest {}
 
 class EncodeResponse {
   final int id;

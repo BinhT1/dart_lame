@@ -16,8 +16,8 @@ class LameMp3Encoder {
   int _nextEncodeRequestId = 0;
 
   /// Mapping from [_EncodeRequest] or [_EncodeRequestFloat64] `id`s to the completers corresponding to the correct future of the pending request.
-  final Map<int, Completer<Uint8List?>> _encodeRequests =
-      <int, Completer<Uint8List?>>{};
+  final Map<int, Completer<Uint8List>> _encodeRequests =
+      <int, Completer<Uint8List>>{};
 
   LameMp3Encoder(
       {int numChannels = 2, int sampleRate = 44100, int bitRate = 128}) {
@@ -56,7 +56,7 @@ class LameMp3Encoder {
   /// Encode PCM IEEE Double data to mp3 frames
   Future<Uint8List> encodeDouble(
       {required Float64List leftChannel, Float64List? rightChannel}) async {
-    EncoderWorker worker = await _futureWorker;
+    final EncoderWorker worker = await _futureWorker;
     final int requestId = _nextEncodeRequestId++;
     final EncodeFloat64Request request = EncodeFloat64Request(
         id: requestId, leftChannel: leftChannel, rightChannel: rightChannel);
@@ -67,7 +67,7 @@ class LameMp3Encoder {
   }
 
   Future<Uint8List> flush() async {
-    EncoderWorker worker = await _futureWorker;
+    final EncoderWorker worker = await _futureWorker;
     final int requestId = _nextEncodeRequestId++;
     final FlushRequest request = FlushRequest(requestId);
     final Completer<Uint8List> completer = Completer<Uint8List>();
@@ -77,13 +77,8 @@ class LameMp3Encoder {
   }
 
   Future close() async {
-    EncoderWorker worker = await _futureWorker;
-    final int requestId = _nextEncodeRequestId++;
-    final FlushRequest request = FlushRequest(requestId);
-    final Completer<Uint8List?> completer = Completer<Uint8List?>();
-    _encodeRequests[requestId] = completer;
-    worker.sendRequest(request);
-    await completer.future;
+    final EncoderWorker worker = await _futureWorker;
+    worker.close();
   }
 }
 
