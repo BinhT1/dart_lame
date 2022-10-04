@@ -19,11 +19,19 @@ Dart native bindings to LAME (MP3 encoder)
 ## Getting started
 
 To use this library, you must have `libmp3lame` installed on your system.
-Please make sure the following libraries is available on your system or place 
-them under your program's working directory.
+Please make sure the following library is available on your system or place 
+it under your program's working directory.
 - Windows: `mp3lame.dll`
 - Linux: `libmp3lame.so`
 - macOS: `libmp3lame.dylib`
+
+Alternatively, you can manually load `libmp3lame`:
+```dart
+import 'package:dart_lame/lame_loader.dart' as loader;
+import 'dart:ffi' as ffi;
+
+loader.library = ffi.DynamicLibrary.open('path_to_libmp3lame');
+```
 
 **For Flutter user, please use [flutter_lame](https://github.com/BestOwl/flutter_lame) instead.**
 ## Usage
