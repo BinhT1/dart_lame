@@ -7,13 +7,13 @@ import 'package:wav/wav.dart';
 
 void main(List<String> arguments) async {
   print("dart_lame example");
-  print('LAME version: ${getLameVersion()}');
 
   final parser = ArgParser()
     ..addOption("input", abbr: "i", help: "Input wav file", mandatory: true)
     ..addOption("output",
         abbr: "o", help: "Output mp3 file", defaultsTo: "output.mp3");
   final argResults = parser.parse(arguments);
+  print('LAME version: ${getLameVersion()}');
 
   final String inputPath = argResults["input"];
   print("Input file: $inputPath");
@@ -35,7 +35,7 @@ void main(List<String> arguments) async {
     }
 
     for (int i = 0; i < left.length; i += wav.samplesPerSecond) {
-      final mp3Frame = encoder.encodeDouble(
+      final mp3Frame = await encoder.encodeDouble(
           leftChannel: left.sublist(i, i + wav.samplesPerSecond),
           rightChannel: right?.sublist(i, i + wav.samplesPerSecond));
       sink.add(mp3Frame);
