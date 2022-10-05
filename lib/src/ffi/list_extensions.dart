@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-extension Uint16ListExtension on Uint16List {
+extension Int16ListExtension on Int16List {
   /// Allocate native memory and copy list data into it. You are responsible to
   /// free this memory after use
   Pointer<Short> copyToNativeMemory() {

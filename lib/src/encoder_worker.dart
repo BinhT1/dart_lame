@@ -73,11 +73,11 @@ class EncoderWorker {
         // On the worker isolate listen to requests and respond to them.
         if (data is EncodeRequest) {
           final ffi.Pointer<ffi.Short> ptrLeft =
-              data.leftChannel.copyToNativeMemory().cast<ffi.Short>();
+              data.leftChannel.copyToNativeMemory();
           ffi.Pointer<ffi.Short>? ptrRight;
           if (data.rightChannel != null) {
             ptrRight =
-                data.rightChannel!.copyToNativeMemory().cast<ffi.Short>();
+                data.rightChannel!.copyToNativeMemory();
           }
 
           int mp3BufSize = (1.25 * data.leftChannel.length + 7500).ceil();
@@ -110,11 +110,11 @@ class EncoderWorker {
 
         if (data is EncodeFloat64Request) {
           final ffi.Pointer<ffi.Double> ptrLeft =
-              data.leftChannel.copyToNativeMemory().cast<ffi.Double>();
+              data.leftChannel.copyToNativeMemory();
           ffi.Pointer<ffi.Double>? ptrRight;
           if (data.rightChannel != null) {
             ptrRight =
-                data.rightChannel!.copyToNativeMemory().cast<ffi.Double>();
+                data.rightChannel!.copyToNativeMemory();
           }
 
           // See LAME API doc
@@ -223,8 +223,8 @@ class BaseEncoderRequest {
 }
 
 class EncodeRequest extends BaseEncoderRequest {
-  final Uint16List leftChannel;
-  final Uint16List? rightChannel;
+  final Int16List leftChannel;
+  final Int16List? rightChannel;
 
   const EncodeRequest(
       {required int id, required this.leftChannel, this.rightChannel})

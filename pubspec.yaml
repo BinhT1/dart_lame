@@ -1,6 +1,6 @@
 name: dart_lame
 description: Dart native bindings to LAME (MP3 encoder).
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/BestOwl/dart_lame
 
 environment:

@@ -36,7 +36,7 @@ class LameMp3Encoder {
 
   /// Encode PCM-16bit data to mp3 frames
   Future<Uint8List> encode(
-      {required Uint16List leftChannel, Uint16List? rightChannel}) async {
+      {required Int16List leftChannel, Int16List? rightChannel}) async {
     // Encode will take a long time, which will occupy the thread calling it.
     //
     // Do not call these kind of (long lived) native functions in the main isolate. They will
