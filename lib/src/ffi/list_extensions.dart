@@ -26,3 +26,14 @@ extension Float64ListExtension on Float64List {
     return pointer;
   }
 }
+
+extension Uint8ListExtension on Uint8List {
+  Pointer<UnsignedChar> copyToNativeMemory() {
+    final pointer = calloc<UnsignedChar>(length);
+    for (int i = 0; i < length; i++) {
+      pointer[i] = this[i];
+    }
+
+    return pointer;
+  }
+}

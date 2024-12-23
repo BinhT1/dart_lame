@@ -4,6 +4,7 @@ import 'package:ffi/ffi.dart';
 
 import 'ffi/lame_library.dart';
 import 'encoder_worker.dart';
+import 'decoder_worker.dart';
 
 String getLameVersion() {
   return bindings.get_lame_version().cast<Utf8>().toDartString();
@@ -78,6 +79,52 @@ class LameMp3Encoder {
 
   Future close() async {
     final EncoderWorker worker = await _futureWorker;
+    worker.close();
+  }
+}
+
+class LameMp3Decoder {
+  late Future<DecoderWorker> _futureWorker;
+
+  int _nextDecodeRequestId = 0;
+
+  final Map<int, Completer<Int16List>> _decodeRequests =
+      <int, Completer<Int16List>>{};
+
+  LameMp3Decoder({
+    int numChannels = 2,
+    int sampleRate = 44100,
+    int bitRate = 128,
+  }) {
+    _futureWorker = DecoderWorker.create(
+      numChannels: numChannels,
+      sampleRate: sampleRate,
+      bitRate: bitRate,
+      responseCallback: _onWorkerResponse,
+    );
+  }
+
+  void _onWorkerResponse(DecodeResponse response) {
+    final Completer<Int16List?> completer = _decodeRequests[response.id]!;
+    _decodeRequests.remove(response.id);
+    completer.complete(response.result);
+  }
+
+  Future<Int16List> decode({required Uint8List mp3buf}) async {
+    DecoderWorker worker = await _futureWorker;
+    final int requestId = _nextDecodeRequestId++;
+    final DecodeRequest request = DecodeRequest(
+      id: requestId,
+      mp3buf: mp3buf,
+    );
+    final Completer<Int16List> completer = Completer<Int16List>();
+    _decodeRequests[requestId] = completer;
+    worker.sendRequest(request);
+    return completer.future;
+  }
+
+  Future close() async {
+    final DecoderWorker worker = await _futureWorker;
     worker.close();
   }
 }
